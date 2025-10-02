@@ -183,6 +183,11 @@ public final class Scanner {
                 return Token.Kind.INTLITERAL;
 
             case '+':
+                takeIt();
+                if(currentChar == '+'){
+                    takeIt();
+                    return Token.Kind.OPERATOR;
+                }
             case '-':
             case '*':
             case '/':
