@@ -287,10 +287,33 @@ public class Parser {
                 } else {
 
                     Vname vAST = parseRestOfVname(iAST);
-                    accept(Token.Kind.BECOMES);
-                    Expression eAST = parseExpression();
-                    finish(commandPos);
-                    commandAST = new AssignCommand(vAST, eAST, commandPos);
+                    if (currentToken.kind == Token.Kind.OPERATOR && currentToken.spelling.equals("++")){
+                        acceptIt();
+                        //e.g. a++ translates to an assignment a=a+1
+                        //vAST is the variable that we will be updating
+                        //commandPOS is the line number in the source of the current command
+                        //we can just reuse that for every AST node that we make
+
+                        //make the integerLiteral for the 1
+                        IntegerLiteral il = new IntegerLiteral("1", commandPos);
+                        //this gets wrapped in an integer expression
+                        IntegerExpression ie = new IntegerExpression(il, commandPos);
+                        //this variable name gets wrapped in a VnameExpression
+                        VnameExpression vne = new VnameExpression(vAST, commandPos);
+                        //the operator will be a "+"
+                        Operator op = new Operator("+", commandPos);
+                        //now we assemble the expressions into a BinaryExpression for the a+1
+                        Expression eAST = new BinaryExpression(vne, op, ie, commandPos);
+                        //this sets the last line of the command for debugging purposes
+                        finish(commandPos);
+                        //we need to make an assignment, with a binary expression on the right
+                        commandAST = new AssignCommand(vAST, eAST, commandPos);
+                    }else {
+                        accept(Token.Kind.BECOMES);
+                        Expression eAST = parseExpression();
+                        finish(commandPos);
+                        commandAST = new AssignCommand(vAST, eAST, commandPos);
+                    }
                 }
             }
             break;
