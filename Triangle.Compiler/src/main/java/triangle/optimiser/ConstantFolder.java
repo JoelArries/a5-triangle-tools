@@ -490,7 +490,6 @@ public class ConstantFolder implements ActualParameterVisitor<Void, AbstractSynt
 		return null;
 	}
 
-
     // TODO uncomment if you've implemented the repeat command
 	@Override
 	public AbstractSyntaxTree visitRepeatCommand(RepeatCommand ast, Void arg) {
@@ -576,6 +575,18 @@ public class ConstantFolder implements ActualParameterVisitor<Void, AbstractSynt
 			if (o.decl == StdEnvironment.addDecl) {
 				foldedValue = int1 + int2;
 			}
+            else if (o.decl == StdEnvironment.divideDecl) {
+                foldedValue = int1/int2;
+            }
+            else if (o.decl == StdEnvironment.moduloDecl) {
+                foldedValue = int1 % int2;
+            }
+            else if (o.decl == StdEnvironment.multiplyDecl) {
+                foldedValue = int1 * int2;
+            }
+            else if (o.decl == StdEnvironment.subtractDecl) {
+                foldedValue = int1 - int2;
+            }
 
 			if (foldedValue instanceof Integer) {
 				IntegerLiteral il = new IntegerLiteral(foldedValue.toString(), node1.getPosition());
