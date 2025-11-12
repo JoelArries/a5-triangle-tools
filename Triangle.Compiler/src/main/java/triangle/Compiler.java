@@ -19,6 +19,7 @@
 package triangle;
 
 import triangle.abstractSyntaxTrees.Program;
+import triangle.abstractSyntaxTrees.visitors.StatisticVisitor;
 import triangle.codeGenerator.Emitter;
 import triangle.codeGenerator.Encoder;
 import triangle.contextualAnalyzer.Checker;
@@ -27,17 +28,30 @@ import triangle.syntacticAnalyzer.Parser;
 import triangle.syntacticAnalyzer.Scanner;
 import triangle.syntacticAnalyzer.SourceFile;
 import triangle.treeDrawer.Drawer;
+import com.sampullara.cli.Args;
+import com.sampullara.cli.Argument;
 
 /**
  * The main driver class for the Triangle compiler.
  */
 public class Compiler {
 
-	/** The filename for the object program, normally obj.tam. */
-	static String objectName = "obj.tam";
-	
-	static boolean showTree = false;
-	static boolean folding = false;
+    @Argument(alias = "objectName", description = "the filename for the object program, normally obj.tam", required = false)
+    private static String objectName = "obj.tam";
+
+    @Argument(alias = "showTree", description = "Should the tree be shown?", required = false)
+    private static boolean showTree = false;
+
+    @Argument(alias = "folding", description = "should folding be applied?", required = false)
+    private static boolean folding = false;
+
+    @Argument(alias = "showStats", description = "Show the statistics of IntegerExpressions and CharacterExpressions", required = false)
+    private static boolean showStats = false;
+
+    @Argument(alias = "showTreeAfter", description = "show the tree after folding", required = false)
+    private static boolean showTreeAfter = false;
+
+
 
 	private static Scanner scanner;
 	private static Parser parser;
@@ -46,6 +60,7 @@ public class Compiler {
 	private static Emitter emitter;
 	private static ErrorReporter reporter;
 	private static Drawer drawer;
+    //private static Drawer foldedTreeDrawer;
 
 	/** The AST representing the source program. */
 	private static Program theAST;
@@ -63,7 +78,7 @@ public class Compiler {
 	 * @return true iff the source program is free of compile-time errors, otherwise
 	 *         false.
 	 */
-	static boolean compileProgram(String sourceName, String objectName, boolean showingAST, boolean showingTable) {
+	static boolean compileProgram(String sourceName, String objectName, boolean showingAST, boolean showingTable, boolean showStats, boolean showTreeAfter) {
 
 		System.out.println("********** " + "Triangle Compiler (Java Version 2.1)" + " **********");
 
@@ -86,23 +101,36 @@ public class Compiler {
 		// scanner.enableDebugging();
 		theAST = parser.parseProgram(); // 1st pass
 		if (reporter.getNumErrors() == 0) {
-			// if (showingAST) {
-			// drawer.draw(theAST);
-			// }
-			System.out.println("Contextual Analysis ...");
-			checker.check(theAST); // 2nd pass
-			if (showingAST) {
-				drawer.draw(theAST);
-			}
-			if (folding) {
-				theAST.visit(new ConstantFolder());
-			}
-			
-			if (reporter.getNumErrors() == 0) {
-				System.out.println("Code Generation ...");
-				encoder.encodeRun(theAST, showingTable); // 3rd pass
-			}
-		}
+            if (showTree) {
+                drawer.draw(theAST);
+                }
+            System.out.println("Contextual Analysis ...");
+            checker.check(theAST); // 2nd pass
+            if (showingAST) {
+                drawer.draw(theAST);
+            }
+            if (folding) {
+                theAST.visit(new ConstantFolder());
+            }
+
+            if (showTreeAfter) {
+                drawer.draw(theAST);
+            }
+
+            if (reporter.getNumErrors() == 0) {
+                System.out.println("Code Generation ...");
+                encoder.encodeRun(theAST, showingTable); // 3rd pass
+            }
+
+            if (showStats) {
+                StatisticVisitor statisticVisitor = new StatisticVisitor();
+                statisticVisitor.visitProgram(theAST, null);
+                int characterExpressionCount = statisticVisitor.getCountCharacterExpressions();
+                int integerExpressionCount = statisticVisitor.getCountIntegerExpressions();
+                System.out.println("The number of character expressions is: " + characterExpressionCount
+                        + ". The number of integer expressions is: " + integerExpressionCount);
+            }
+        }
 
 		boolean successful = (reporter.getNumErrors() == 0);
 		if (successful) {
@@ -121,19 +149,21 @@ public class Compiler {
 	 *             source filename.
 	 */
 	public static void main(String[] args) {
-
+    /*
 		if (args.length < 1) {
-			System.out.println("Usage: tc filename [-o=outputfilename] [tree] [folding]");
+			System.out.println("Usage: tc filename [-o=outputfilename] [tree] [folding] [showStats]");
 			System.exit(1);
 		}
 		
 		parseArgs(args);
-
+*/
+        Compiler compiler = new Compiler();
+        Args.parseOrExit(compiler, args);
 		String sourceName = args[0];
 		
-		var compiledOK = compileProgram(sourceName, objectName, showTree, false);
+		var compiledOK = compileProgram(sourceName, objectName, showTree, false, showStats, showTreeAfter);
 
-		if (!showTree) {
+		if (!showTree || !showTreeAfter) {
 			System.exit(compiledOK ? 0 : 1);
 		}
 	}
@@ -148,6 +178,9 @@ public class Compiler {
 			} else if (sl.equals("folding")) {
 				folding = true;
 			}
+            else if (sl.equals("showStats")){
+                showStats = true;
+            }
 		}
 	}
 }

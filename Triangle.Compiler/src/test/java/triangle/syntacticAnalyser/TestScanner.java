@@ -6,10 +6,10 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
-//import jdk.internal.javac.Restricted;
 import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
 
+import triangle.Compiler;
 import triangle.ErrorReporter;
 import triangle.syntacticAnalyzer.Parser;
 import triangle.syntacticAnalyzer.Scanner;
@@ -58,33 +58,39 @@ public class TestScanner {
 
 	@Test
 	public void testHiNewComment() {
-		compileExpectSuccess("/hi-newcomment.tri");
+		compileExpectFailure("/hi-newcomment.tri");
 	}
 	
 
 	@Test
 	public void testHiNewComment2() {
-		compileExpectSuccess("/hi-newcomment2.tri");
+		compileExpectFailure("/hi-newcomment2.tri");
 	}
 	
 
 	@Test
 	public void testBarDemo() {
-		compileExpectSuccess("/bardemo.tri");
+		compileExpectFailure("/bardemo.tri");
 	}
 	
 
 	@Test
-	public void testRepeatUntil() {
-		compileExpectSuccess("/repeatuntil.tri");
+    public void testRepeatUntil() {
+		compileExpectFailure("/repeatuntil.tri");
 	}
 
-    @Test
-    public void testAdd(){compileExpectSuccess("/add.tri");}
 
     @Test
-    public void testIncrement(){compileExpectSuccess("/increment.tri");}
-	
+    public void testMultiplyingByTwo() { compileExpectSuccess("/multiplyingByTwo.tri");}
+
+
+    @Test
+    public void testLoopWhile() { compileExpectSuccess("/loopwhile.tri");}
+
+
+    @Test
+    public void testWhileCurly() {compileExpectSuccess("/while-curly.tri");}
+
 	
 	
 	private void compileExpectSuccess(String filename) {

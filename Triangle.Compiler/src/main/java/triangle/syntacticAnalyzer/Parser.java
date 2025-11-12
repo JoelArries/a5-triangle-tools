@@ -287,28 +287,16 @@ public class Parser {
                 } else {
 
                     Vname vAST = parseRestOfVname(iAST);
-                    if (currentToken.kind == Token.Kind.OPERATOR && currentToken.spelling.equals("++")){
+                    if (currentToken.kind == Token.Kind.OPERATOR && currentToken.spelling.equals("**")) {
                         acceptIt();
-                        //e.g. a++ translates to an assignment a=a+1
-                        //vAST is the variable that we will be updating
-                        //commandPOS is the line number in the source of the current command
-                        //we can just reuse that for every AST node that we make
-
-                        //make the integerLiteral for the 1
-                        IntegerLiteral il = new IntegerLiteral("1", commandPos);
-                        //this gets wrapped in an integer expression
+                        IntegerLiteral il = new IntegerLiteral("2", commandPos);
                         IntegerExpression ie = new IntegerExpression(il, commandPos);
-                        //this variable name gets wrapped in a VnameExpression
                         VnameExpression vne = new VnameExpression(vAST, commandPos);
-                        //the operator will be a "+"
-                        Operator op = new Operator("+", commandPos);
-                        //now we assemble the expressions into a BinaryExpression for the a+1
+                        Operator op = new Operator("*", commandPos);
                         Expression eAST = new BinaryExpression(vne, op, ie, commandPos);
-                        //this sets the last line of the command for debugging purposes
                         finish(commandPos);
-                        //we need to make an assignment, with a binary expression on the right
                         commandAST = new AssignCommand(vAST, eAST, commandPos);
-                    }else {
+                    } else {
                         accept(Token.Kind.BECOMES);
                         Expression eAST = parseExpression();
                         finish(commandPos);
@@ -317,6 +305,12 @@ public class Parser {
                 }
             }
             break;
+
+            case LCURLY:
+                acceptIt();
+                commandAST = parseCommand();
+                accept(Token.Kind.RCURLY);
+                break;
 
             case BEGIN:
                 acceptIt();
@@ -356,18 +350,33 @@ public class Parser {
             }
             break;
 
-            case REPEAT: {
+            case LOOP: {
                 acceptIt();
-                Command cAST = parseSingleCommand();
-                accept(Token.Kind.UNTIL);
+                Command c1AST;
+                if (currentToken.kind == Token.Kind.BEGIN || currentToken.kind == Token.Kind.LCURLY) {
+                    c1AST = parseCommand();
+                } else {
+                    c1AST = parseSingleCommand();
+                }
+                accept(Token.Kind.WHILE);
                 Expression eAST = parseExpression();
+                accept(Token.Kind.DO);
+                Command c2AST;
+                if (currentToken.kind == Token.Kind.BEGIN || currentToken.kind == Token.Kind.LCURLY) {
+                    c2AST = parseCommand();
+                } else {
+                    c2AST = parseSingleCommand();
+                }
                 finish(commandPos);
-                commandAST = new RepeatCommand(eAST, cAST, commandPos);
+                commandAST = new LoopWhileCommand(c1AST, eAST, c2AST, commandPos);
+
+
             }
-            break;
+
 
             case SEMICOLON:
             case END:
+            case RCURLY:
             case ELSE:
             case IN:
             case EOT:
@@ -475,6 +484,7 @@ public class Parser {
                 expressionAST = new ArrayExpression(aaAST, expressionPos);
             }
             break;
+
 
             case LCURLY: {
                 acceptIt();
